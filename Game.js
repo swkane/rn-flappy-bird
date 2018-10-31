@@ -254,6 +254,24 @@ export default class Game extends React.Component {
       this.player.y = 8 * Math.cos(Date.now() / 200);
       this.player.angle = 0;
     }
+
+    // 1
+    if (!this.gameOver) {
+      this.groundNode.children.map((node, index) => {
+        // 2
+        node.x -= SPEED;
+        // 3
+        if (node.x < this.scene.size.width * -1) {
+          let nextIndex = index + 1;
+          if (nextIndex === this.groundNode.children.length) {
+            nextIndex = 0;
+          }
+          const nextNode = this.groundNode.children[nextIndex];
+          // 4
+          node.x = nextNode.x + this.scene.size.width - 1.55;
+        }
+      });
+    }
   };
 
   reset = () => {};
