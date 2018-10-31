@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, View } from "react-native";
 import Files from "./Files";
 // import * as THREE from "three";
-import { THREE } from "expo-three";
+import ExpoTHREE, { THREE } from "expo-three";
 import Expo from "expo";
 import { Group, Node, Sprite, SpriteView } from "./GameKit";
 
@@ -220,16 +220,25 @@ export default class Game extends React.Component {
 
   addScore = () => {};
 
+  setGameOver = () => {};
+
   updateGame = delta => {
     if (this.gameStarted) {
       // 1
       this.velocity -= GRAVITY * delta;
+
+      const target = this.groundNode.top;
       if (!this.gameOver) {
-        // 1
+        const playerBox = new THREE.Box3().setFromObject(this.player);
+
         this.pipes.forEachAlive(pipe => {
           pipe.x += pipe.velocity;
+          const pipeBox = new THREE.Box3().setFromObject(pipe);
 
-          // 2
+          if (pipeBox.intersectsBox(playerBox)) {
+            this.setGameOver();
+          }
+
           if (
             pipe.name === "bottom" &&
             !pipe.passed &&
@@ -239,16 +248,27 @@ export default class Game extends React.Component {
             this.addScore();
           }
         });
+
+        this.player.angle = Math.min(
+          Math.PI / 4,
+          Math.max(-Math.PI / 2, (FLAP + this.velocity) / FLAP)
+        );
+
+        if (this.player.y <= target) {
+          this.setGameOver();
+        }
+
+        this.player.update(delta);
       }
-      // 2
-      this.player.angle = Math.min(
-        Math.PI / 4,
-        Math.max(-Math.PI / 2, (FLAP + this.velocity) / FLAP)
-      );
-      // 3
-      this.player.update(delta);
-      // 4
-      this.player.y += this.velocity * delta;
+
+      // if the game is over then let the player continue to fall until they hit the floor
+      if (this.player.y <= target) {
+        this.player.angle = -Math.PI / 2;
+        this.player.y = target;
+        this.velocity = 0;
+      } else {
+        this.player.y += this.velocity * delta;
+      }
     } else {
       this.player.update(delta);
       this.player.y = 8 * Math.cos(Date.now() / 200);
